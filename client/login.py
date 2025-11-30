@@ -1,0 +1,80 @@
+import json
+import sys
+
+from PyQt6.QtCore import Qt
+
+from client.activities.login_activity import LoginActivity
+from PyQt6.QtNetwork import QNetworkAccessManager
+from PyQt6.QtWidgets import QWidget, QApplication
+
+import main
+from client import api, translate, forms, settings, Themes
+
+
+class Login(QWidget, LoginActivity):
+    def __init__(self, app):
+        super().__init__()
+        self.app = app
+        self.setupUi(self)
+        self.loginButton.clicked.connect(self.login)
+        self.registerButton.clicked.connect(self.register)
+        self.manager = QNetworkAccessManager()
+
+    def login(self):
+        if not self.loginBox.text() or not self.passwordBox.text():
+            forms.warn(self, translate.get("auth.error.empty"))
+        else:
+            form_data = {
+                "grant_type": "password",
+                "username": self.loginBox.text(),
+                "password": self.passwordBox.text()
+            }
+            result, status = api.post_token("/token", form_data)
+            if status == 401:
+                forms.warn(self, translate.get("auth.error.wrong"))
+            main.token = json.loads(result)["access_token"]
+            main.id = json.loads(result)["id"]
+            self.open_main()
+
+    def register(self):
+        if not self.loginBox.text() or not self.passwordBox.text():
+            forms.warn(self, translate.get("auth.error.empty"))
+        else:
+            form_data = {
+                "grant_type": "password",
+                "username": self.loginBox.text(),
+                "password": self.passwordBox.text()
+            }
+            result, _ = api.post_token("/reg", form_data)
+
+    def open_main(self):
+        self.main = main.Main(self.app)
+        self.main.load_chats()
+        self.main.refresh()
+        self.main.show()
+        self.close()
+
+
+def except_hook(cls, exception, traceback):
+    sys.__excepthook__(cls, exception, traceback)
+
+
+if __name__ == "__main__":
+    QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
+    settings.load()
+    app = QApplication(sys.argv)
+
+    if app.styleHints().colorScheme() == Qt.ColorScheme.Light:
+        settings.system_theme = Themes.LIGHT
+    elif app.styleHints().colorScheme() == Qt.ColorScheme.Dark:
+        settings.system_theme = Themes.DARK
+
+    if settings.get_theme() == Themes.LIGHT:
+        app.styleHints().setColorScheme(Qt.ColorScheme.Light)
+    elif settings.get_theme() == Themes.DARK:
+        app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
+
+    ex = Login(app)
+    ex.show()
+    sys.excepthook = except_hook
+    sys.exit(app.exec())
