@@ -1,7 +1,5 @@
 import datetime
 import json
-import os
-import sys
 
 import requests
 from PyQt6.QtCore import Qt, QTimer, QPoint
@@ -10,21 +8,17 @@ from PyQt6.QtWidgets import QMainWindow, QListWidgetItem, QLabel, QWidget, QVBox
     QSizePolicy, QMenu, QFileDialog
 
 from client import api, settings, translate, Action, forms
-from client.activities.main_activity import MainActivity
+from client.activities import MainActivity
 from client.chat import ChatMessageWidget
-from style import Themes
-
-BASE_DIR = sys._MEIPASS if getattr(sys, 'frozen', False) else os.path.abspath(".")
-res_path = os.path.join(BASE_DIR, 'res')
-
-token = ""
-id = 0
+from client.style import Themes
 
 
 class Main(QMainWindow, MainActivity):
-    def __init__(self, app):
+    def __init__(self, app, token, id):
         super().__init__()
         self.setupUi(self)
+        self.token = token
+        self.id = id
         self.app = app
         self.chatInfo.setVisible(False)
         self.chat.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -103,13 +97,13 @@ class Main(QMainWindow, MainActivity):
             case Action.EDIT:
                 data = {"message": self.message.text()}
                 x = requests.post(api.get_common(f"/c/{self.current_chat}/{self.sender().id}/edit"),
-                                  json=data, headers={'Authorization': "Bearer " + token})
+                                  json=data, headers={'Authorization': "Bearer " + self.token})
                 if x:
                     self.message.setText("")
                 return
             case Action.DELETE:
                 requests.post(api.get_common(f"/c/{self.current_chat}/{self.sender().id}/delete"),
-                              headers={'Authorization': "Bearer " + token})
+                              headers={'Authorization': "Bearer " + self.token})
                 return
 
     def find_msg(self, id):
@@ -119,7 +113,7 @@ class Main(QMainWindow, MainActivity):
 
     def load_chats(self):
         self.chats.clear()
-        self.chats_dict = api.get_my_chats(token)
+        self.chats_dict = api.get_my_chats(self.token)
         self.chats_dict = json.loads(self.chats_dict)
         for chat_name in self.chats_dict.keys():
             response = requests.get(api.get_common(f"/get/chat/avatar/{self.chats_dict[chat_name]}"))
@@ -131,7 +125,7 @@ class Main(QMainWindow, MainActivity):
             self.chats.addItem(item)
 
     def refresh(self):
-        if not token:
+        if not self.token:
             return
         if self.chats.currentItem() is None:
             self.clear_chat_layout()
@@ -147,7 +141,7 @@ class Main(QMainWindow, MainActivity):
             return
 
         self.current_chat = self.chats_dict.get(self.chats.currentItem().text(), 0)
-        x, status = api.get_chat(self.current_chat, token)
+        x, status = api.get_chat(self.current_chat, self.token)
         if status == 403:
             self.clear_chat_layout()
 
@@ -325,15 +319,15 @@ class Main(QMainWindow, MainActivity):
     def send_msg(self):
         if self.current_file == b"":
             data = {"message": self.message.text()}
-            x = api.send_msg(data, self.current_chat, token)
+            x = api.send_msg(data, self.current_chat, self.token)
             if x:
                 self.message.setText("")
         else:
             response = requests.post(api.get_common("/upload/media"), files=self.current_file,
-                                     headers={'Authorization': "Bearer " + token})
+                                     headers={'Authorization': "Bearer " + self.token})
             if response.status_code == 200:
                 data = {"message": self.message.text(), "media": response.json()["upload"]}
-                x = api.send_msg(data, self.current_chat, token)
+                x = api.send_msg(data, self.current_chat, self.token)
                 if x:
                     self.message.setText("")
 
@@ -349,7 +343,7 @@ class Main(QMainWindow, MainActivity):
         self.settings_window.show()
 
     def open_create_widget(self):
-        self.create_chat = forms.CreateChat(self, token)
+        self.create_chat = forms.CreateChat(self, self.token)
         self.create_chat.show()
 
     def upload_file(self):
@@ -361,6 +355,6 @@ class Main(QMainWindow, MainActivity):
 
     def search_user(self):
         response = requests.get(api.get_common(f"/search/{self.search.text()}"),
-                                headers={'Authorization': "Bearer " + token})
-        self.new_user = forms.NewUser(response.json()["id"], self, token)
+                                headers={'Authorization': "Bearer " + self.token})
+        self.new_user = forms.NewUser(response.json()["id"], self, self.token)
         self.new_user.show()

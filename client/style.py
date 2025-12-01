@@ -1,11 +1,5 @@
 #  Copyright (c) 2025 Timofei Kirsanov
 
-import os
-import sys
-
-BASE_DIR = sys._MEIPASS if getattr(sys, 'frozen', False) else os.path.abspath(".")
-res_path = os.path.join(BASE_DIR, 'res')
-
 
 class Themes:
 

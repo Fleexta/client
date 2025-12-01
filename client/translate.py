@@ -1,11 +1,17 @@
 #  Copyright (c) 2025 Timofei Kirsanov
 
-from client import settings
+import json
+
+
+def get_language():
+    with open("settings.json", "r", encoding="utf-8") as f:
+        settings = json.loads(f.read())
+        return settings["language"]
 
 
 def get(key_f: str, placeholders: tuple = None):
     values = {}
-    with open(f"langs/{settings.language}.lang", "r", encoding="utf-8") as file:
+    with open(f"langs/{get_language()}.lang", "r", encoding="utf-8") as file:
         lines = file.readlines()
         for line in lines:
             key, value = map(str, line.strip().split("=", maxsplit=1))

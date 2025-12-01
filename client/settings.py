@@ -1,11 +1,12 @@
 #  Copyright (c) 2025 Timofei Kirsanov
+
 import json
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QWidget, QApplication
 
 from client import Themes, translate
-from client.activities.settings_activity import SettingsActivity
+from client.activities import SettingsActivity
 
 format = "%H:%M"
 theme = Themes.DARK

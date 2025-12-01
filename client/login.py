@@ -3,11 +3,11 @@ import sys
 
 from PyQt6.QtCore import Qt
 
-from client.activities.login_activity import LoginActivity
+from client.activities import LoginActivity
 from PyQt6.QtNetwork import QNetworkAccessManager
 from PyQt6.QtWidgets import QWidget, QApplication
 
-import main
+from client.main import Main
 from client import api, translate, forms, settings, Themes
 
 
@@ -32,9 +32,7 @@ class Login(QWidget, LoginActivity):
             result, status = api.post_token("/token", form_data)
             if status == 401:
                 forms.warn(self, translate.get("auth.error.wrong"))
-            main.token = json.loads(result)["access_token"]
-            main.id = json.loads(result)["id"]
-            self.open_main()
+            self.open_main(json.loads(result)["access_token"], json.loads(result)["id"])
 
     def register(self):
         if not self.loginBox.text() or not self.passwordBox.text():
@@ -47,8 +45,8 @@ class Login(QWidget, LoginActivity):
             }
             result, _ = api.post_token("/reg", form_data)
 
-    def open_main(self):
-        self.main = main.Main(self.app)
+    def open_main(self, token, id):
+        self.main = Main(self.app, token, id)
         self.main.load_chats()
         self.main.refresh()
         self.main.show()

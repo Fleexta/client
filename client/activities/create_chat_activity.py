@@ -1,4 +1,5 @@
 #  Copyright (c) 2025 Timofei Kirsanov
+
 from client import translate
 
 from PyQt6 import QtCore, QtWidgets

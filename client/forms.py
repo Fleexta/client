@@ -5,9 +5,8 @@ from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from client import api, translate
-from client.activities.create_chat_activity import CreateChatActivity
-from client.main import Main
-from client.activities.new_user_activity import NewUserActivity
+from client.activities import CreateChatActivity
+from client.activities import NewUserActivity
 
 
 def warn(parent, text):
@@ -21,7 +20,7 @@ def warn(parent, text):
 
 
 class CreateChat(QWidget, CreateChatActivity):
-    def __init__(self, parent: Main, token):
+    def __init__(self, parent, token):
         super().__init__()
         self.setupUi(self)
         self.token = token
@@ -45,7 +44,7 @@ class CreateChat(QWidget, CreateChatActivity):
 
 
 class NewUser(QWidget, NewUserActivity):
-    def __init__(self, user_id, parent: Main, token):
+    def __init__(self, user_id, parent, token):
         super().__init__()
         self.token = token
         self.parent = parent
