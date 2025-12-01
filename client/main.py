@@ -1,5 +1,7 @@
 import datetime
 import json
+import os
+import sys
 
 import requests
 from PyQt6.QtCore import Qt, QTimer, QPoint
@@ -8,9 +10,12 @@ from PyQt6.QtWidgets import QMainWindow, QListWidgetItem, QLabel, QWidget, QVBox
     QSizePolicy, QMenu, QFileDialog
 
 from client import api, settings, translate, Action, forms
-from style import Themes
-from client.chat import ChatMessageWidget
 from client.activities.main_activity import MainActivity
+from client.chat import ChatMessageWidget
+from style import Themes
+
+BASE_DIR = sys._MEIPASS if getattr(sys, 'frozen', False) else os.path.abspath(".")
+res_path = os.path.join(BASE_DIR, 'res')
 
 token = ""
 id = 0
