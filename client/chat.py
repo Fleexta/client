@@ -1,12 +1,14 @@
 #  Copyright (c) 2025 Timofei Kirsanov
+import webbrowser
+from urllib.parse import urlparse
 
 import markdown
 import requests
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QColor, QPen, QPainterPath
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QFileDialog, QToolButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QFileDialog, QToolButton, QMessageBox
 
-from client import settings, api
+from client import settings, api, translate
 from client.res import resource
 
 
@@ -193,7 +195,8 @@ class ChatMessageWidget(QWidget):
         self.message_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
         self.message_label.setMaximumWidth(280)
         self.message_label.setWordWrap(True)
-        self.message_label.setOpenExternalLinks(True)
+        self.message_label.setOpenExternalLinks(False)
+        self.message_label.linkActivated.connect(self.on_link_clicked)
 
         if media:
             response = requests.get(api.get_common(f"/media/{media}"))
@@ -220,3 +223,23 @@ class ChatMessageWidget(QWidget):
         main_layout.addWidget(self.avatar_label)
         main_layout.addWidget(message_container, 1)
         self.setLayout(main_layout)
+
+    def on_link_clicked(self, link):
+        link_form = urlparse(link)
+        if link_form.scheme == "https" or link_form.scheme == "http":
+            if link_form.netloc == api.NETLOC:
+                reply = QMessageBox.question(self.parent(),
+                                             translate.get("web.link.title.internal"),
+                                             translate.get("web.link.text.internal", (link, )),
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+                if reply == QMessageBox.StandardButton.Yes:
+                    webbrowser.open(link)
+            else:
+                reply = QMessageBox.question(self.parent(),
+                                             translate.get("web.link.title.external"),
+                                             translate.get("web.link.text.external", (link, )),
+                                             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+                if reply == QMessageBox.StandardButton.Yes:
+                    webbrowser.open(link)
