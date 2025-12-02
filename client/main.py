@@ -2,13 +2,14 @@ import datetime
 import json
 
 import requests
-from PyQt6.QtCore import Qt, QTimer, QPoint
+from PyQt6.QtCore import Qt, QTimer, QPoint, QThread
 from PyQt6.QtGui import QPixmap, QImage, QIcon, QAction
 from PyQt6.QtWidgets import QMainWindow, QListWidgetItem, QLabel, QWidget, QVBoxLayout, \
     QSizePolicy, QMenu, QFileDialog
 
 from client import api, settings, translate, Action, forms
 from client.activities import MainActivity
+from client.api import SseWorker
 from client.chat import ChatMessageWidget
 from client.style import Themes
 
@@ -32,6 +33,11 @@ class Main(QMainWindow, MainActivity):
         self.searchButton.clicked.connect(self.search_user)
         self.editButton.clicked.connect(self.edit_chat)
         self.callButton.clicked.connect(self.call)
+
+        self.chats.clicked.connect(self.refresh)
+
+        self.thread = None
+        self.worker = None
 
         self.settings_window = None
 
@@ -126,6 +132,14 @@ class Main(QMainWindow, MainActivity):
             item = QListWidgetItem(icon, chat_name)
             self.chats.addItem(item)
 
+    def clear_chat_layout(self):
+        while self.messages_layout.count():
+            item = self.messages_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+                widget.deleteLater()
+
     def refresh(self):
         if not self.token:
             return
@@ -143,7 +157,35 @@ class Main(QMainWindow, MainActivity):
             return
 
         self.current_chat = self.chats_dict.get(self.chats.currentItem().text(), 0)
-        x, status = api.get_chat(self.current_chat, self.token)
+
+        self.thread = QThread()
+        self.worker = SseWorker(f"/c/{self.current_chat}", self.token)
+
+        self.worker.moveToThread(self.thread)
+
+        self.thread.started.connect(self.worker.run)
+        self.worker.data_received.connect(self.parse_sse_data)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+
+        self.thread.start()
+
+    def parse_sse_data(self, in_data):
+        line_data, status = in_data
+        if line_data.startswith('data:'):
+            data_str = line_data[len('data:'):].strip()
+            try:
+                event_data = json.loads(data_str)
+                data = {"type": 'json', "data": event_data, "raw_line": line_data}
+            except json.JSONDecodeError:
+                data = {"type": "text", "data": data_str, "raw_line": line_data}
+        else:
+            data = {"type": "other", "data": line_data, "raw_line": line_data}
+        if data["type"] == "json":
+            self.render_messages(data["data"], status)
+
+    def render_messages(self, x, status):
         if status == 403:
             self.clear_chat_layout()
 
@@ -238,7 +280,7 @@ class Main(QMainWindow, MainActivity):
         self.messages_layout.setSpacing(10)
 
         try:
-            self.messages = json.loads(x)
+            self.messages = x
             if len(self.messages) == 0:
                 self.clear_chat_layout()
 
@@ -310,13 +352,13 @@ class Main(QMainWindow, MainActivity):
             """)
             self.messages_layout.addWidget(error_widget)
 
-    def clear_chat_layout(self):
-        while self.messages_layout.count():
-            item = self.messages_layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.setParent(None)
-                widget.deleteLater()
+    def closeEvent(self, event):
+        if self.worker:
+            self.worker.stop()
+        if self.thread and self.thread.isRunning():
+            self.thread.quit()
+            self.thread.wait(2000)
+        event.accept()
 
     def send_msg(self):
         if self.current_file == b"":

@@ -2,7 +2,8 @@
 
 import json
 
-from PyQt6.QtCore import QUrl, QEventLoop, QByteArray
+import requests
+from PyQt6.QtCore import QUrl, QEventLoop, QByteArray, pyqtSignal, QObject
 from PyQt6.QtNetwork import QNetworkAccessManager, QNetworkRequest
 
 url = "http://localhost:8001"
@@ -124,3 +125,44 @@ def send_msg(data_dict: dict, chat: int, token: str):
     manager.post(request, json_bytes)
     loop.exec()
     return response.get('result')
+
+
+def connect_sse_generator(path, token):
+    headers = {
+        'Accept': 'text/event-stream',
+        "Authorization": "Bearer " + token
+    }
+    try:
+        with requests.get(get_common(path), headers=headers, stream=True, timeout=10) as response:
+            response.raise_for_status()
+            for line in response.iter_lines():
+                if line:
+                    decoded_line = line.decode('utf-8')
+                    if not decoded_line.strip().startswith(':'):
+                        yield decoded_line, response.status_code
+    except requests.exceptions.RequestException as e:
+        yield f"ERROR: {e}"
+
+
+class SseWorker(QObject):
+    data_received = pyqtSignal(tuple)
+    finished = pyqtSignal()
+
+    def __init__(self, url, token):
+        super().__init__()
+        self.url = url
+        self.token = token
+        self._running = True
+
+    def run(self):
+        for line, status in connect_sse_generator(self.url, self.token):
+            if not self._running:
+                break
+
+            self.data_received.emit((line, status))
+
+        self.finished.emit()
+
+    def stop(self):
+        self._running = False
+
