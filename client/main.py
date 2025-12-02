@@ -30,13 +30,15 @@ class Main(QMainWindow, MainActivity):
         self.createChatButton.clicked.connect(self.open_create_widget)
         self.uploadButton.clicked.connect(self.upload_file)
         self.searchButton.clicked.connect(self.search_user)
+        self.editButton.clicked.connect(self.edit_chat)
+        self.callButton.clicked.connect(self.call)
 
         self.settings_window = None
 
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.refresh)
-        self.timer.setInterval(1000)
-        self.timer.start()
+        # self.timer = QTimer(self)
+        # self.timer.timeout.connect(self.refresh)
+        # self.timer.setInterval(1000)
+        # self.timer.start()
 
     def show_context_menu(self, pos: QPoint):
         global_pos = self.sender().mapToGlobal(pos)
@@ -358,3 +360,10 @@ class Main(QMainWindow, MainActivity):
                                 headers={'Authorization': "Bearer " + self.token})
         self.new_user = forms.NewUser(response.json()["id"], self, self.token)
         self.new_user.show()
+
+    def edit_chat(self):
+        self.edit_chat = forms.EditChat(self.current_chat, self, self.token, self.app)
+        self.edit_chat.show()
+
+    def call(self):
+        pass

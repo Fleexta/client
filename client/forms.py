@@ -5,8 +5,7 @@ from PyQt6.QtGui import QImage, QPixmap
 from PyQt6.QtWidgets import QMessageBox, QWidget
 
 from client import api, translate
-from client.activities import CreateChatActivity
-from client.activities import NewUserActivity
+from client.activities import CreateChatActivity, EditChatActivity, NewUserActivity
 
 
 def warn(parent, text):
@@ -57,8 +56,11 @@ class NewUser(QWidget, NewUserActivity):
         pixmap = QPixmap(image)
         self.avatar.setPixmap(pixmap)
 
+        username = requests.get(api.get_common(f"/get/user/username/{self.user_id}"))
+        self.username.setText(username.json()[str(user_id)])
+
         name = requests.get(api.get_common(f"/get/user/name/{self.user_id}"))
-        self.username.setText(name.json()[str(user_id)])
+        self.name.setText(name.json()[str(user_id)])
 
         about = requests.get(api.get_common(f"/get/user/about/{self.user_id}"))
         self.about.setText(about.json()[str(user_id)])
@@ -69,3 +71,44 @@ class NewUser(QWidget, NewUserActivity):
         chat_id = requests.get(api.get_common(f"/c/{self.user_id}"), headers={'Authorization': "Bearer " + self.token})
         self.parent.load_chats()
         self.parent.current_chat = chat_id.json()["id"]
+
+
+class EditChat(QWidget, EditChatActivity):
+    def __init__(self, chat_id, parent, token, app):
+        super().__init__()
+        self.token = token
+        self.parent = parent
+        self.chat_id = chat_id
+        self.app = app
+        self.setupUi(self)
+
+        avatar = requests.get(api.get_common(f"/get/chat/avatar/{self.chat_id}"))
+        image = QImage()
+        image.loadFromData(avatar.content)
+        pixmap = QPixmap(image)
+        self.avatar.setPixmap(pixmap)
+
+        name = requests.get(api.get_common(f"/get/chat/name/{self.chat_id}"))
+        self.name.setText(name.json()[str(self.chat_id)])
+
+        invite = requests.get(api.get_common(f"/get/chat/invite/{self.chat_id}"))
+        self.invite.setText(invite.json()[str(self.chat_id)])
+
+        members = requests.get(api.get_common(f"/get/chat/members/{self.chat_id}"))
+        members_list = ""
+        for member in members.json()[str(self.chat_id)]:
+            members_list += str(member) + ", "
+        self.members.setText(members_list)
+
+        self.generateLink.clicked.connect(self.generate_link)
+        self.copyLink.clicked.connect(self.copy_link)
+
+    def generate_link(self):
+        requests.post(api.get_common(f"/generate/invite/chat/{self.chat_id}"),
+                      headers={'Authorization': "Bearer " + self.token})
+        invite = requests.get(api.get_common(f"/get/chat/invite/{self.chat_id}"))
+        self.invite.setText(invite.json()[str(self.chat_id)])
+
+    def copy_link(self):
+        clipboard = self.app.clipboard()
+        clipboard.setText(api.get_common(f"/?invite={self.invite.text()}"))
