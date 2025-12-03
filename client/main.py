@@ -1,5 +1,7 @@
 import datetime
 import json
+import mimetypes
+import os
 
 import requests
 from PyQt6.QtCore import Qt, QPoint, QThread
@@ -25,7 +27,7 @@ class Main(QMainWindow, MainActivity):
         self.chat.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.current_chat = 0
         self.chats_dict = {}
-        self.current_file = b""
+        self.current_file = {}
         self.sendButton.clicked.connect(self.send_msg)
         self.settings.clicked.connect(self.open_settings)
         self.createChatButton.clicked.connect(self.open_create_widget)
@@ -76,36 +78,37 @@ class Main(QMainWindow, MainActivity):
         action6.setWhatsThis(Action.DELETE)
         menu.addAction(action6)
 
+        message_id = self.sender().id
         action = menu.exec(global_pos)
         if action is None:
             return
         match action.whatsThis():
             case Action.REPLY:
-                print(action.whatsThis(), self.sender().id)
+                print(action.whatsThis(), message_id)
                 return
             case Action.COPY:
                 clipboard = self.app.clipboard()
-                clipboard.setText(self.find_msg(self.sender().id)["message"])
+                clipboard.setText(self.find_msg(message_id)["message"])
                 return
             case Action.PIN:
-                print(action.whatsThis(), self.sender().id)
+                print(action.whatsThis(), message_id)
                 return
             case Action.FORWARD:
-                print(action.whatsThis(), self.sender().id)
+                print(action.whatsThis(), message_id)
                 return
             case Action.COPY_LINK:
                 clipboard = self.app.clipboard()
-                clipboard.setText(api.get_common(f"/c/{self.current_chat}/{self.sender().id}"))
+                clipboard.setText(api.get_common(f"/c/{self.current_chat}/{message_id}"))
                 return
             case Action.EDIT:
                 data = {"message": self.message.text()}
-                x = requests.post(api.get_common(f"/c/{self.current_chat}/{self.sender().id}/edit"),
+                x = requests.post(api.get_common(f"/c/{self.current_chat}/{message_id}/edit"),
                                   json=data, headers={'Authorization': "Bearer " + self.token})
                 if x:
                     self.message.setText("")
                 return
             case Action.DELETE:
-                requests.post(api.get_common(f"/c/{self.current_chat}/{self.sender().id}/delete"),
+                requests.post(api.get_common(f"/c/{self.current_chat}/{message_id}/delete"),
                               headers={'Authorization': "Bearer " + self.token})
                 return
 
@@ -152,6 +155,13 @@ class Main(QMainWindow, MainActivity):
             return
 
         self.current_chat = self.chats_dict.get(self.chats.currentItem().text(), 0)
+
+        if not (self.thread is None and self.worker is None):
+            if self.worker:
+                self.worker.stop()
+            if self.thread and self.thread.isRunning():
+                self.thread.quit()
+                self.thread.wait(1000)
 
         self.thread = QThread()
         self.worker = SseWorker(f"/c/{self.current_chat}", self.token)
@@ -363,7 +373,7 @@ class Main(QMainWindow, MainActivity):
                 self.message.setText("")
         else:
             response = requests.post(api.get_common("/upload/media"), files=self.current_file,
-                                     headers={'Authorization': "Bearer " + self.token})
+                                     headers={"Authorization": "Bearer " + self.token})
             if response.status_code == 200:
                 data = {"message": self.message.text(), "media": response.json()["upload"]}
                 x = api.send_msg(data, self.current_chat, self.token)
@@ -386,11 +396,14 @@ class Main(QMainWindow, MainActivity):
         self.create_chat.show()
 
     def upload_file(self):
-        file_name = QFileDialog.getOpenFileName(
+        file_path = QFileDialog.getOpenFileName(
             self, 'Выбрать файл', '',
             'Изображение (*.jpg);;Изображение (*.png);;Все файлы (*)')[0]
-        with open(file_name, 'rb') as f:
-            self.current_file = {'file': f.read()}
+        if file_path:
+            file_name = os.path.basename(file_path)
+            mime_type, _ = mimetypes.guess_type(file_name) or "application/octet-stream"
+            with open(file_path, 'rb') as f:
+                self.current_file = {'file': (file_name, f.read(), mime_type)}
 
     def search_user(self):
         response = requests.get(api.get_common(f"/search/{self.search.text()}"),

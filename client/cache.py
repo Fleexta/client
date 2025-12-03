@@ -1,5 +1,6 @@
 #  Copyright (c) 2025 Timofei Kirsanov
 import json
+import warnings
 
 import requests
 import uuid
@@ -49,3 +50,21 @@ def write_media(name: str, media):
         f.write(name + " " + key + "\n")
     with open("cache/" + key, "wb") as f:
         f.write(media)
+
+
+def check():
+    try:
+        with open("cache/cache", "r") as f:
+            return True
+    except FileNotFoundError:
+        warnings.warn("cache registration file not found", CacheWarning)
+        return False
+
+
+def init():
+    with open("cache/cache", "w") as f:
+        pass
+
+
+class CacheWarning(Warning):
+    pass

@@ -129,7 +129,7 @@ def send_msg(data_dict: dict, chat: int, token: str):
 
 def connect_sse_generator(path, token):
     headers = {
-        'Accept': 'text/event-stream',
+        "Accept": "text/event-stream",
         "Authorization": "Bearer " + token
     }
     try:

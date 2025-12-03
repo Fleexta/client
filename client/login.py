@@ -8,7 +8,7 @@ from PyQt6.QtNetwork import QNetworkAccessManager
 from PyQt6.QtWidgets import QWidget, QApplication
 
 from client.main import Main
-from client import api, translate, forms, settings, Themes
+from client import api, translate, forms, settings, Themes, cache
 
 
 class Login(QWidget, LoginActivity):
@@ -61,6 +61,9 @@ if __name__ == "__main__":
     QApplication.setAttribute(Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
     settings.load()
     app = QApplication(sys.argv)
+
+    if not (cache.check()):
+        cache.init()
 
     if app.styleHints().colorScheme() == Qt.ColorScheme.Light:
         settings.system_theme = Themes.LIGHT

@@ -8,7 +8,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPainter, QColor, QPen, QPainterPath
 from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QHBoxLayout, QFrame, QFileDialog, QToolButton, QMessageBox
 
-from client import settings, api, translate
+from client import settings, api, translate, File
 from client.res import resource
 
 
@@ -17,6 +17,7 @@ class MediaLabel(QLabel):
         super().__init__(parent)
         self.media = media
         self.filename = filename
+        self.parent = parent
         self.setup_ui()
 
     def setup_ui(self):
@@ -89,9 +90,9 @@ class MediaLabel(QLabel):
         self.filename_label.setText(filename)
 
     def on_download_clicked(self):
-        file_name, _ = QFileDialog.getSaveFileName(self, "Сохранить файл", self.filename, "Все файлы (*)")
+        file_name, _ = QFileDialog.getSaveFileName(self.parent, "Сохранить файл", self.filename, "Все файлы (*)")
         if file_name:
-            response = requests.get(api.get_common(f"/media/{self.media}"))
+            response = requests.get(api.get_common(f"/download/{self.media}"))
             if response.status_code == 200:
                 with open(file_name, 'wb') as f:
                     for chunk in response.iter_content(8192):
@@ -136,9 +137,9 @@ class ChatMessageWidget(QWidget):
     def __init__(self, id=0, author_name="", message_text="", media=b"", time_str="", parent=None):
         super().__init__(parent)
         self.id = id
-        self.setup_ui(author_name, message_text, media, time_str)
+        self.setup_ui(author_name, message_text, media, time_str, parent)
 
-    def setup_ui(self, author_name, message_text, media, time_str):
+    def setup_ui(self, author_name, message_text, media, time_str, parent):
         main_layout = QHBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(7)
@@ -199,9 +200,9 @@ class ChatMessageWidget(QWidget):
         self.message_label.linkActivated.connect(self.on_link_clicked)
 
         if media:
-            response = requests.get(api.get_common(f"/media/{media}"))
-            filename = response.headers.get('Content-Disposition', '').split('filename=')[-1].strip('"')
-            self.media_label = MediaLabel(filename, media)
+            response = File(f"/media/{media}")
+            filename = response.json()
+            self.media_label = MediaLabel(filename, media, parent)
 
         self.time_label = QLabel(time_str)
         self.time_label.setStyleSheet("""
