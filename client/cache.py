@@ -1,5 +1,6 @@
 #  Copyright (c) 2025 Timofei Kirsanov
 import json
+import os
 import warnings
 
 import requests
@@ -62,6 +63,7 @@ def check():
 
 
 def init():
+    os.makedirs("cache", exist_ok=True)
     with open("cache/cache", "w") as f:
         pass
 
