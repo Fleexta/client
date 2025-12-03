@@ -9,6 +9,7 @@ from PyQt6.QtWidgets import QWidget, QApplication
 
 from client.main import Main
 from client import api, translate, forms, settings, Themes, cache
+from client.registration import Registration
 
 
 class Login(QWidget, LoginActivity):
@@ -35,15 +36,9 @@ class Login(QWidget, LoginActivity):
             self.open_main(json.loads(result)["access_token"], json.loads(result)["id"])
 
     def register(self):
-        if not self.loginBox.text() or not self.passwordBox.text():
-            forms.warn(self, translate.get("auth.error.empty"))
-        else:
-            form_data = {
-                "grant_type": "password",
-                "username": self.loginBox.text(),
-                "password": self.passwordBox.text()
-            }
-            result, _ = api.post_token("/reg", form_data)
+        self.registration = Registration(self)
+        self.registration.show()
+        self.close()
 
     def open_main(self, token, id):
         self.main = Main(self.app, token, id)

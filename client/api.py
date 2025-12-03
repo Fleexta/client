@@ -19,32 +19,6 @@ def get_common(path: str):
     return url + path
 
 
-def get_chat(chat: int, token: str):
-    request = QNetworkRequest(get(f"/c/{chat}"))
-    request.setRawHeader(b"Authorization", f"Bearer {token}".encode("utf-8"))
-
-    manager = QNetworkAccessManager()
-    loop = QEventLoop()
-
-    response_data = {}
-
-    def on_finished(reply):
-        http_status = reply.attribute(QNetworkRequest.Attribute.HttpStatusCodeAttribute)
-        if reply.error() == reply.NetworkError.NoError:
-            response_data['result'] = reply.readAll().data().decode()
-        else:
-            response_data['result'] = reply.errorString()
-        response_data['http_status'] = http_status
-        loop.quit()
-
-    manager.finished.connect(on_finished)
-    manager.get(request)
-
-    loop.exec()
-
-    return response_data.get('result'), response_data.get('http_status')
-
-
 def get_my_chats(token: str):
     request = QNetworkRequest(get("/chats"))
     request.setRawHeader(b"Authorization", f"Bearer {token}".encode("utf-8"))

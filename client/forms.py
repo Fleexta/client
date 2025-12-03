@@ -92,7 +92,7 @@ class EditChat(QWidget, EditChatActivity):
         self.name.setText(name.json()[str(self.chat_id)])
 
         invite = requests.get(api.get_common(f"/get/chat/invite/{self.chat_id}"))
-        self.invite.setText(invite.json()[str(self.chat_id)])
+        self.invite.setText(str(invite.json()[str(self.chat_id)]))
 
         members = requests.get(api.get_common(f"/get/chat/members/{self.chat_id}"))
         members_list = ""

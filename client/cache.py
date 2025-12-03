@@ -1,11 +1,11 @@
 #  Copyright (c) 2025 Timofei Kirsanov
+
 import json
 import os
 import warnings
 
 import requests
 import uuid
-from PyQt6.QtGui import QImage, QPixmap
 
 from client import api
 

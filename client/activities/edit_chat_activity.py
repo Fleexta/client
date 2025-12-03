@@ -2,6 +2,8 @@
 
 from PyQt6 import QtCore, QtWidgets
 
+from client import translate
+
 
 class EditChatActivity(object):
     def setupUi(self, centralwidget):
@@ -44,7 +46,7 @@ class EditChatActivity(object):
 
     def retranslateUi(self, centralwidget):
         _translate = QtCore.QCoreApplication.translate
-        centralwidget.setWindowTitle(_translate("centralwidget", "QivyMessenger"))
+        centralwidget.setWindowTitle(_translate("centralwidget", translate.get("app.name")))
         self.generateLink.setText(_translate("centralwidget", "Новая"))
         self.membersLabel.setText(_translate("centralwidget", "Участники"))
         self.name.setText(_translate("centralwidget", "name"))

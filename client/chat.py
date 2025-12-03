@@ -134,9 +134,10 @@ class CircularLabel(QLabel):
 
 
 class ChatMessageWidget(QWidget):
-    def __init__(self, id=0, author_name="", message_text="", media=b"", time_str="", parent=None):
+    def __init__(self, id=0, author_name="", message_text="", media=b"", time_str="", parent=None, token=""):
         super().__init__(parent)
         self.id = id
+        self.token = token
         self.setup_ui(author_name, message_text, media, time_str, parent)
 
     def setup_ui(self, author_name, message_text, media, time_str, parent):
@@ -229,6 +230,9 @@ class ChatMessageWidget(QWidget):
         link_form = urlparse(link)
         if link_form.scheme == "https" or link_form.scheme == "http":
             if link_form.netloc == api.NETLOC:
+                if link.startswith(api.get_common("/?invite=")):
+                    requests.get(link, headers={"Authorization": "Bearer " + self.token})
+                    return
                 reply = QMessageBox.question(self.parent(),
                                              translate.get("web.link.title.internal"),
                                              translate.get("web.link.text.internal", (link, )),

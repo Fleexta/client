@@ -51,7 +51,7 @@ class Main(QMainWindow, MainActivity):
         action1.setWhatsThis(Action.REPLY)
         menu.addAction(action1)
 
-        if self.find_msg(self.sender().id)["author"] == id:
+        if self.find_msg(self.sender().id)["author"] == self.id:
             action0 = QAction(translate.get("chat.context.edit"), self)
             action0.setWhatsThis(Action.EDIT)
             menu.addAction(action0)
@@ -72,11 +72,12 @@ class Main(QMainWindow, MainActivity):
         action5.setWhatsThis(Action.COPY_LINK)
         menu.addAction(action5)
 
-        menu.addSeparator()
+        if self.find_msg(self.sender().id)["author"] == self.id:
+            menu.addSeparator()
 
-        action6 = QAction(translate.get("chat.context.delete"), self)
-        action6.setWhatsThis(Action.DELETE)
-        menu.addAction(action6)
+            action6 = QAction(translate.get("chat.context.delete"), self)
+            action6.setWhatsThis(Action.DELETE)
+            menu.addAction(action6)
 
         message_id = self.sender().id
         action = menu.exec(global_pos)
@@ -284,78 +285,79 @@ class Main(QMainWindow, MainActivity):
         self.messages_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
         self.messages_layout.setSpacing(10)
 
-        # try:
-        self.messages = x
-        if len(self.messages) == 0:
+        try:
+            self.messages = x
+            if len(self.messages) == 0:
+                self.clear_chat_layout()
+
+                empty_container = QWidget()
+                empty_layout = QVBoxLayout()
+
+                empty_title = QLabel(translate.get("chat.text.empty"))
+                empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                empty_title.setStyleSheet("""
+                    QLabel {
+                        color: """ + settings.get_theme().TEXT_MAIN + """;
+                        font-size: 12pt;
+                    }
+                """)
+
+                empty_text = QLabel(translate.get("chat.text.empty.force"))
+                empty_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
+                empty_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+                empty_text.setOpenExternalLinks(True)
+                empty_text.setStyleSheet("""
+                    QLabel {
+                        color: """ + settings.get_theme().TEXT_SUPPORT + """;
+                        font-size: 9pt;
+                    }
+                """)
+
+                empty_layout.addWidget(empty_title)
+                empty_layout.addWidget(empty_text)
+                empty_container.setLayout(empty_layout)
+
+                self.messages_layout.addWidget(empty_container)
+                return
+            for msg in self.messages:
+                iso_string = msg["time"]
+                dt_object = datetime.datetime.fromisoformat(iso_string)
+                author = File(f"/get/user/name/{msg['author']}")
+
+                message_widget = ChatMessageWidget(
+                    id=msg["id"],
+                    author_name=author.json()[str(msg["author"])],
+                    message_text=msg["message"],
+                    media=msg["media"],
+                    time_str=dt_object.strftime(settings.format),
+                    token=self.token
+                )
+
+                avatar = File(f"/get/user/avatar/{msg['author']}")
+                image = QImage()
+                image.loadFromData(avatar.img())
+                pixmap = QPixmap(image)
+                message_widget.avatar_label.setPixmap(pixmap)
+
+                message_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+                message_widget.setMaximumWidth(int(self.width() * 0.5))
+
+                message_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+                message_widget.customContextMenuRequested.connect(self.show_context_menu)
+
+                self.messages_layout.addWidget(message_widget)
+            self.messages_container.setMinimumWidth(self.chat.viewport().width())
+        except Exception as e:
             self.clear_chat_layout()
-
-            empty_container = QWidget()
-            empty_layout = QVBoxLayout()
-
-            empty_title = QLabel(translate.get("chat.text.empty"))
-            empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            empty_title.setStyleSheet("""
+            error_widget = QLabel(translate.get("chat.error.presentation", (str(e),)))
+            error_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            error_widget.setStyleSheet("""
                 QLabel {
-                    color: """ + settings.get_theme().TEXT_MAIN + """;
-                    font-size: 12pt;
+                    color: """ + Themes.COMMON.ERROR_COLOR + """;
+                    font-size: 10pt;
                 }
             """)
-
-            empty_text = QLabel(translate.get("chat.text.empty.force"))
-            empty_text.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            empty_text.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
-            empty_text.setOpenExternalLinks(True)
-            empty_text.setStyleSheet("""
-                QLabel {
-                    color: """ + settings.get_theme().TEXT_SUPPORT + """;
-                    font-size: 9pt;
-                }
-            """)
-
-            empty_layout.addWidget(empty_title)
-            empty_layout.addWidget(empty_text)
-            empty_container.setLayout(empty_layout)
-
-            self.messages_layout.addWidget(empty_container)
-            return
-        for msg in self.messages:
-            iso_string = msg["time"]
-            dt_object = datetime.datetime.fromisoformat(iso_string)
-            author = File(f"/get/user/name/{msg['author']}")
-
-            message_widget = ChatMessageWidget(
-                id=msg["id"],
-                author_name=author.json()[str(msg["author"])],
-                message_text=msg["message"],
-                media=msg["media"],
-                time_str=dt_object.strftime(settings.format)
-            )
-
-            avatar = File(f"/get/user/avatar/{msg['author']}")
-            image = QImage()
-            image.loadFromData(avatar.img())
-            pixmap = QPixmap(image)
-            message_widget.avatar_label.setPixmap(pixmap)
-
-            message_widget.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
-            message_widget.setMaximumWidth(int(self.width() * 0.5))
-
-            message_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            message_widget.customContextMenuRequested.connect(self.show_context_menu)
-
-            self.messages_layout.addWidget(message_widget)
-        self.messages_container.setMinimumWidth(self.chat.viewport().width())
-        # except Exception as e:
-        #     self.clear_chat_layout()
-        #     error_widget = QLabel(translate.get("chat.error.presentation", (str(e),)))
-        #     error_widget.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        #     error_widget.setStyleSheet("""
-        #         QLabel {
-        #             color: """ + Themes.COMMON.ERROR_COLOR + """;
-        #             font-size: 10pt;
-        #         }
-        #     """)
-        #     self.messages_layout.addWidget(error_widget)
+            self.messages_layout.addWidget(error_widget)
 
     def closeEvent(self, event):
         if self.worker:
@@ -366,7 +368,7 @@ class Main(QMainWindow, MainActivity):
         event.accept()
 
     def send_msg(self):
-        if self.current_file == b"":
+        if self.current_file == {}:
             data = {"message": self.message.text()}
             x = api.send_msg(data, self.current_chat, self.token)
             if x:

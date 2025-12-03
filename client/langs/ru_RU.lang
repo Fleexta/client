@@ -5,6 +5,7 @@ auth.text.login=логин:
 auth.text.registration=пароль:
 auth.error.empty=Введите логин и пароль
 auth.error.wrong=Неправильный логин и пароль
+auth.error.password=Пароли не совпадают
 web.link.title.internal=Открытие внутренней ссылки
 web.link.title.external=Открытие внешней ссылки
 web.link.text.internal=Вы хотите открыть внутреннюю ссылку в своём браузере?\n\n%s\n\nЭто сайт Fleexta
