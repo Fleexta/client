@@ -47,8 +47,8 @@ class EditChatActivity(object):
     def retranslateUi(self, centralwidget):
         _translate = QtCore.QCoreApplication.translate
         centralwidget.setWindowTitle(_translate("centralwidget", translate.get("app.name")))
-        self.generateLink.setText(_translate("centralwidget", "Новая"))
-        self.membersLabel.setText(_translate("centralwidget", "Участники"))
+        self.generateLink.setText(_translate("centralwidget", translate.get("web.link.new")))
+        self.membersLabel.setText(_translate("centralwidget", translate.get("chat.members")))
         self.name.setText(_translate("centralwidget", "name"))
         self.invite.setText(_translate("centralwidget", "invite_link"))
         self.avatar.setText(_translate("centralwidget", "avatar"))

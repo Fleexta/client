@@ -83,8 +83,8 @@ class RegistrationActivity(object):
     def retranslateUi(self, centralwidget):
         _translate = QtCore.QCoreApplication.translate
         centralwidget.setWindowTitle(_translate("centralwidget", translate.get("app.name")))
-        self.nameText.setText(_translate("centralwidget", "имя:"))
-        self.registerButton.setText(_translate("centralwidget", "Регистрация"))
-        self.loginText.setText(_translate("centralwidget", "логин:"))
-        self.passwordText.setText(_translate("centralwidget", "пароль:"))
-        self.retryText.setText(_translate("centralwidget", "повторите:"))
+        self.nameText.setText(_translate("centralwidget", translate.get("auth.text.name")))
+        self.registerButton.setText(_translate("centralwidget", translate.get("auth.button.registration")))
+        self.loginText.setText(_translate("centralwidget", translate.get("auth.text.login")))
+        self.passwordText.setText(_translate("centralwidget", translate.get("auth.text.registration")))
+        self.retryText.setText(_translate("centralwidget", translate.get("auth.text.retry")))
