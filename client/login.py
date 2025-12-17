@@ -57,6 +57,19 @@ if __name__ == "__main__":
     settings.load()
     app = QApplication(sys.argv)
 
+    app.setStyleSheet("""
+        QLineEdit {
+            selection-background-color: #A328B0;
+        }
+
+        QComboBox {
+            selection-background-color: #A328B0;
+        }
+
+        QListWidget {
+            selection-background-color: #A328B0;
+        }""")
+
     if not (cache.check()):
         cache.init()
 

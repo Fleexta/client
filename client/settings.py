@@ -86,5 +86,17 @@ class SettingsWindow(QWidget, SettingsActivity):
         elif self.theme.currentText() == translate.get("settings.theme.dark"):
             self.app.styleHints().setColorScheme(Qt.ColorScheme.Dark)
             theme = Themes.DARK
+        self.app.setStyleSheet("""
+            QLineEdit {
+                selection-background-color: #A328B0;
+            }
+    
+            QComboBox {
+                selection-background-color: #A328B0;
+            }
+    
+            QListWidget {
+                selection-background-color: #A328B0;
+            }""")
         self.refresh()
         write()

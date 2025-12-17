@@ -1,5 +1,4 @@
 #  Copyright (c) 2025 Timofei Kirsanov
-import json
 
 import requests
 from PyQt6.QtWidgets import QWidget

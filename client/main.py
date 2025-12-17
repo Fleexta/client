@@ -117,6 +117,8 @@ class Main(QMainWindow, MainActivity):
         for msg in self.messages:
             if msg["id"] == id:
                 return msg
+        forms.warn(self, "Message not found")
+        return None
 
     def load_chats(self):
         self.chats.clear()
